@@ -1,0 +1,73 @@
+{
+  "name": "sdm",
+  "version": "1.0.0",
+  "description": "SDM (Sekou Download Manager) - Gestionnaire de téléchargements moderne pour Windows",
+  "main": "main.js",
+  "author": "Sekou",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "icons": "node tools/generate-icons.js && node tools/generate-win-icon.js",
+    "icons:png": "node tools/generate-icons.js",
+    "icons:win": "node tools/generate-win-icon.js",
+    "smoke": "node tools/smoke-test.js",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder --win nsis --x64"
+  },
+  "devDependencies": {
+    "electron": "^44.3.0",
+    "electron-builder": "^26.15.3"
+  },
+  "build": {
+    "appId": "com.sekou.sdm",
+    "productName": "SDM",
+    "copyright": "Copyright © 2026 Sekou",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "download-engine.js",
+      "local-server.js",
+      "package.json",
+      "LICENSE",
+      "renderer/**/*",
+      "assets/**/*",
+      "!assets/*.psd",
+      "!**/*.map"
+    ],
+    "asarUnpack": [
+      "assets/app-icon.ico"
+    ],
+    "extraResources": [
+      {
+        "from": "extension",
+        "to": "extension"
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "assets/app-icon.ico"
+    },
+    "nsis": {
+      "artifactName": "SDM_Setup.exe",
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "SDM",
+      "installerIcon": "assets/app-icon.ico",
+      "uninstallerIcon": "assets/app-icon.ico",
+      "deleteAppDataOnUninstall": false
+    }
+  }
+}

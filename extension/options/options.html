@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SDM - Options</title>
+  <link rel="stylesheet" href="options.css" />
+</head>
+<body>
+  <div class="container">
+    <header class="page-header">
+      <div class="page-logo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"
+             stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 3v10" /><path d="m6 9 6 6 6-6" /><path d="M5 20h14" />
+        </svg>
+      </div>
+      <div>
+        <h1>SDM — Sekou Download Manager</h1>
+        <p>Réglages de l'extension</p>
+      </div>
+    </header>
+
+    <section class="card">
+      <h2>Application SDM</h2>
+      <div class="field">
+        <label for="host">Adresse de l'application SDM</label>
+        <input id="host" type="text" spellcheck="false" />
+        <small>Le serveur local est lancé par SDM sur le port 26545.</small>
+      </div>
+      <div class="field">
+        <button id="btn-test" class="btn secondary" type="button">Tester la connexion</button>
+        <span id="test-result" class="test-result"></span>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Détection</h2>
+      <div class="field check">
+        <input id="intercept" type="checkbox" />
+        <div>
+          <label for="intercept">Intercepter les téléchargements du navigateur</label>
+          <small>Affiche « Télécharger avec SDM ? » à chaque nouveau téléchargement.</small>
+        </div>
+      </div>
+      <div class="field check">
+        <input id="detectLinks" type="checkbox" />
+        <div>
+          <label for="detectLinks">Afficher le bouton SDM à côté des liens de fichiers</label>
+          <small>ZIP, PDF, vidéos, musiques, images… sur les pages web.</small>
+        </div>
+      </div>
+      <div class="field check">
+        <input id="detectVideo" type="checkbox" />
+        <div>
+          <label for="detectVideo">Détecter les vidéos (flux HLS <code>.m3u8</code>, vidéos directes)</label>
+          <small class="warning">⚠ Utilisez uniquement pour des contenus que vous êtes légalement autorisé à télécharger.</small>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Téléchargement multi-connexions</h2>
+      <div class="field">
+        <label for="connections">Nombre de connexions par fichier</label>
+        <select id="connections">
+          <option value="0">Automatique (recommandé)</option>
+          <option value="8">8 connexions</option>
+          <option value="16">16 connexions</option>
+          <option value="32">32 connexions</option>
+        </select>
+        <small>SDM divise le fichier en segments téléchargés en parallèle (8 à 32).</small>
+      </div>
+    </section>
+
+    <footer class="actions">
+      <button id="btn-save" class="btn primary" type="button">Enregistrer</button>
+      <span id="save-result" class="save-result"></span>
+    </footer>
+  </div>
+
+  <script src="options.js"></script>
+</body>
+</html>

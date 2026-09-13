@@ -1,0 +1,87 @@
+/* SDM - boutons d'action injectés dans les pages web */
+.sdm-has-btn { position: relative; }
+
+.sdm-link-btn {
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%) scale(0.92);
+  z-index: 2147483000;
+  opacity: 0;
+  pointer-events: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin: 0;
+  padding: 3px 8px;
+  border: none;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #4f8cff, #7b5bff);
+  color: #fff;
+  font-family: "Segoe UI", system-ui, sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: 0.2px;
+  cursor: pointer;
+  box-shadow: 0 3px 10px rgba(31, 45, 90, 0.4);
+  transition: opacity 120ms ease, transform 120ms ease;
+}
+
+.sdm-has-btn:hover .sdm-link-btn,
+.sdm-link-btn:hover,
+.sdm-link-btn:focus {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(-50%) scale(1);
+}
+
+.sdm-link-btn:active { filter: brightness(0.92); }
+
+/* Bouton vidéo (au-dessus/à côté du lecteur) */
+.sdm-video-btn {
+  z-index: 2147483001;
+  margin: 8px auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border: none;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #4f8cff, #7b5bff);
+  color: #fff;
+  font-family: "Segoe UI", system-ui, sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(31, 45, 90, 0.45);
+}
+.sdm-video-btn:hover { filter: brightness(1.1); }
+.sdm-video-btn:disabled { opacity: 0.65; cursor: wait; }
+
+/* Toast de confirmation */
+.sdm-toast {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 2147483647;
+  padding: 11px 16px;
+  border-radius: 10px;
+  font-family: "Segoe UI", system-ui, sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+  background: #111a2e;
+  border: 1px solid #2b3d63;
+  border-left: 4px solid #4f8cff;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  animation: sdmToastIn 180ms ease;
+  max-width: 340px;
+}
+.sdm-toast.ok { border-left-color: #2ed47a; }
+.sdm-toast.error { border-left-color: #f2576d; }
+
+@keyframes sdmToastIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}

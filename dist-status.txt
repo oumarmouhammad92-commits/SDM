@@ -1,0 +1,135 @@
+ts=2026-09-13T17:41:47.920Z
+FILE builder-debug.yml size=7700 mtime=2026-09-13T17:41:27.913Z
+FILE builder-effective-config.yaml size=864 mtime=2026-09-13T17:17:57.416Z
+FILE SDM_Setup.exe size=111389796 mtime=2026-09-13T16:06:39.508Z
+FILE SDM_Setup.exe.blockmap size=117523 mtime=2026-09-13T17:41:27.879Z
+FILE SDM_Setup_1.0.0.exe size=111389796 mtime=2026-09-13T16:06:39.508Z
+FILE SDM_Setup_1.0.0.exe.blockmap size=117516 mtime=2026-09-13T15:40:57.350Z
+DIR  win-unpacked
+FILE win-unpacked\chrome_100_percent.pak size=719654 mtime=2026-09-13T17:39:51.092Z
+FILE win-unpacked\chrome_200_percent.pak size=1269017 mtime=2026-09-13T17:39:54.042Z
+FILE win-unpacked\d3dcompiler_47.dll size=4741488 mtime=2026-09-13T17:39:54.311Z
+FILE win-unpacked\dxcompiler.dll size=25744896 mtime=2026-09-13T17:39:54.575Z
+FILE win-unpacked\dxil.dll size=1509760 mtime=2026-09-13T17:39:51.002Z
+FILE win-unpacked\ffmpeg.dll size=3113472 mtime=2026-09-13T17:39:51.194Z
+FILE win-unpacked\icudtl.dat size=10876560 mtime=2026-09-13T17:39:55.063Z
+FILE win-unpacked\LICENSE.electron.txt size=1096 mtime=2026-09-13T17:39:54.106Z
+FILE win-unpacked\LICENSES.chromium.html size=20472830 mtime=2026-09-13T17:39:54.955Z
+DIR  win-unpacked\locales
+FILE win-unpacked\locales\af.pak size=636155 mtime=2026-09-13T17:39:51.110Z
+FILE win-unpacked\locales\am.pak size=1029450 mtime=2026-09-13T17:39:51.220Z
+FILE win-unpacked\locales\ar.pak size=1130933 mtime=2026-09-13T17:39:51.055Z
+FILE win-unpacked\locales\bg.pak size=1178203 mtime=2026-09-13T17:39:51.208Z
+FILE win-unpacked\locales\bn.pak size=1513545 mtime=2026-09-13T17:39:54.061Z
+FILE win-unpacked\locales\ca.pak size=716908 mtime=2026-09-13T17:39:54.606Z
+FILE win-unpacked\locales\cs.pak size=743351 mtime=2026-09-13T17:39:55.082Z
+FILE win-unpacked\locales\da.pak size=666465 mtime=2026-09-13T17:39:54.123Z
+FILE win-unpacked\locales\de.pak size=717834 mtime=2026-09-13T17:39:51.252Z
+FILE win-unpacked\locales\el.pak size=1295538 mtime=2026-09-13T17:39:51.069Z
+FILE win-unpacked\locales\en-GB.pak size=580030 mtime=2026-09-13T17:39:50.979Z
+FILE win-unpacked\locales\en-US.pak size=586582 mtime=2026-09-13T17:39:51.100Z
+FILE win-unpacked\locales\es-419.pak size=707635 mtime=2026-09-13T17:39:55.101Z
+FILE win-unpacked\locales\es.pak size=703926 mtime=2026-09-13T17:39:54.643Z
+FILE win-unpacked\locales\et.pak size=642216 mtime=2026-09-13T17:39:54.591Z
+FILE win-unpacked\locales\fa.pak size=1063054 mtime=2026-09-13T17:39:55.133Z
+FILE win-unpacked\locales\fi.pak size=655113 mtime=2026-09-13T17:39:51.080Z
+FILE win-unpacked\locales\fil.pak size=741385 mtime=2026-09-13T17:39:54.176Z
+FILE win-unpacked\locales\fr.pak size=763453 mtime=2026-09-13T17:39:54.184Z
+FILE win-unpacked\locales\gu.pak size=1495625 mtime=2026-09-13T17:39:51.268Z
+FILE win-unpacked\locales\he.pak size=928748 mtime=2026-09-13T17:39:54.212Z
+FILE win-unpacked\locales\hi.pak size=1586592 mtime=2026-09-13T17:39:54.626Z
+FILE win-unpacked\locales\hr.pak size=715279 mtime=2026-09-13T17:39:51.231Z
+FILE win-unpacked\locales\hu.pak size=765640 mtime=2026-09-13T17:39:54.130Z
+FILE win-unpacked\locales\id.pak size=635080 mtime=2026-09-13T17:39:54.100Z
+FILE win-unpacked\locales\it.pak size=693990 mtime=2026-09-13T17:39:51.123Z
+FILE win-unpacked\locales\ja.pak size=842132 mtime=2026-09-13T17:39:54.152Z
+FILE win-unpacked\locales\kn.pak size=1720240 mtime=2026-09-13T17:39:54.819Z
+FILE win-unpacked\locales\ko.pak size=718709 mtime=2026-09-13T17:39:54.808Z
+FILE win-unpacked\locales\lt.pak size=777281 mtime=2026-09-13T17:39:51.014Z
+FILE win-unpacked\locales\lv.pak size=774751 mtime=2026-09-13T17:39:54.115Z
+FILE win-unpacked\locales\ml.pak size=1767850 mtime=2026-09-13T17:39:54.144Z
+FILE win-unpacked\locales\mr.pak size=1467313 mtime=2026-09-13T17:39:54.024Z
+FILE win-unpacked\locales\ms.pak size=668356 mtime=2026-09-13T17:39:55.073Z
+FILE win-unpacked\locales\nb.pak size=638121 mtime=2026-09-13T17:39:54.049Z
+FILE win-unpacked\locales\nl.pak size=664767 mtime=2026-09-13T17:39:51.028Z
+FILE win-unpacked\locales\pl.pak size=742064 mtime=2026-09-13T17:39:54.193Z
+FILE win-unpacked\locales\pt-BR.pak size=697044 mtime=2026-09-13T17:39:54.202Z
+FILE win-unpacked\locales\pt-PT.pak size=701056 mtime=2026-09-13T17:39:54.220Z
+FILE win-unpacked\locales\ro.pak size=728144 mtime=2026-09-13T17:39:54.583Z
+FILE win-unpacked\locales\ru.pak size=1200996 mtime=2026-09-13T17:39:54.234Z
+FILE win-unpacked\locales\sk.pak size=755475 mtime=2026-09-13T17:39:51.242Z
+FILE win-unpacked\locales\sl.pak size=722720 mtime=2026-09-13T17:39:54.614Z
+FILE win-unpacked\locales\sr.pak size=1112919 mtime=2026-09-13T17:39:55.123Z
+FILE win-unpacked\locales\sv.pak size=646537 mtime=2026-09-13T17:39:54.598Z
+FILE win-unpacked\locales\sw.pak size=685130 mtime=2026-09-13T17:39:54.650Z
+FILE win-unpacked\locales\ta.pak size=1758067 mtime=2026-09-13T17:39:54.166Z
+FILE win-unpacked\locales\te.pak size=1629379 mtime=2026-09-13T17:39:51.154Z
+FILE win-unpacked\locales\th.pak size=1368866 mtime=2026-09-13T17:39:51.136Z
+FILE win-unpacked\locales\tr.pak size=697368 mtime=2026-09-13T17:39:54.242Z
+FILE win-unpacked\locales\uk.pak size=1211565 mtime=2026-09-13T17:39:51.042Z
+FILE win-unpacked\locales\ur.pak size=1047994 mtime=2026-09-13T17:39:54.251Z
+FILE win-unpacked\locales\vi.pak size=830059 mtime=2026-09-13T17:39:54.634Z
+FILE win-unpacked\locales\zh-CN.pak size=592116 mtime=2026-09-13T17:39:55.110Z
+FILE win-unpacked\locales\zh-TW.pak size=583860 mtime=2026-09-13T17:39:55.093Z
+DIR  win-unpacked\resources
+FILE win-unpacked\resources\app.asar size=98824 mtime=2026-09-13T17:39:58.778Z
+DIR  win-unpacked\resources\app.asar.unpacked
+DIR  win-unpacked\resources\app.asar.unpacked\assets
+FILE win-unpacked\resources\app.asar.unpacked\assets\app-icon.ico size=13774 mtime=2026-09-13T17:39:58.773Z
+FILE win-unpacked\resources\elevate.exe size=107520 mtime=2019-06-17T19:21:30.000Z
+DIR  win-unpacked\resources\extension
+FILE win-unpacked\resources\extension\background.js size=9049 mtime=2026-09-12T02:30:12.798Z
+DIR  win-unpacked\resources\extension\content
+FILE win-unpacked\resources\extension\content\content.css size=2269 mtime=2026-09-12T02:31:17.951Z
+FILE win-unpacked\resources\extension\content\content.js size=6294 mtime=2026-09-12T02:32:56.888Z
+DIR  win-unpacked\resources\extension\icons
+FILE win-unpacked\resources\extension\icons\icon128.png size=2899 mtime=2026-09-13T15:34:25.393Z
+FILE win-unpacked\resources\extension\icons\icon16.png size=444 mtime=2026-09-13T15:34:25.351Z
+FILE win-unpacked\resources\extension\icons\icon32.png size=880 mtime=2026-09-13T15:34:25.368Z
+FILE win-unpacked\resources\extension\icons\icon48.png size=1151 mtime=2026-09-13T15:34:25.376Z
+FILE win-unpacked\resources\extension\manifest.json size=1390 mtime=2026-09-12T02:28:18.219Z
+DIR  win-unpacked\resources\extension\options
+FILE win-unpacked\resources\extension\options\options.css size=3512 mtime=2026-09-12T02:36:05.272Z
+FILE win-unpacked\resources\extension\options\options.html size=3173 mtime=2026-09-12T02:35:26.620Z
+FILE win-unpacked\resources\extension\options\options.js size=2676 mtime=2026-09-12T02:36:34.428Z
+DIR  win-unpacked\resources\extension\popup
+FILE win-unpacked\resources\extension\popup\popup.css size=3973 mtime=2026-09-12T02:34:36.078Z
+FILE win-unpacked\resources\extension\popup\popup.html size=1266 mtime=2026-09-12T02:33:24.546Z
+FILE win-unpacked\resources\extension\popup\popup.js size=3715 mtime=2026-09-12T02:34:59.305Z
+FILE win-unpacked\resources.pak size=12435445 mtime=2026-09-13T17:39:54.798Z
+FILE win-unpacked\SDM.exe size=246070272 mtime=2026-09-13T17:40:00.502Z
+FILE win-unpacked\snapshot_blob.bin size=368776 mtime=2026-09-13T17:39:54.657Z
+FILE win-unpacked\v8_context_snapshot.bin size=742208 mtime=2026-09-13T17:39:54.070Z
+FILE win-unpacked\vk_swiftshader.dll size=5520384 mtime=2026-09-13T17:39:51.326Z
+FILE win-unpacked\vk_swiftshader_icd.json size=106 mtime=2026-09-13T17:39:54.801Z
+FILE win-unpacked\vulkan-1.dll size=939008 mtime=2026-09-13T17:39:54.263Z
+--- build-final.log size=1547 mtime=2026-09-13T17:41:27.967Z
+--- last 30 lines of build-final.log:
+== build-dist demarre 2026-09-13T17:39:44.036Z ==
+
+> sdm@1.0.0 dist
+> electron-builder --win nsis --x64
+
+  • electron-builder  version=26.15.3 os=10.0.19045
+  • loaded configuration  file=package.json ("build" field)
+  • executing @electron/rebuild  electronVersion=44.3.0 arch=x64 buildFromSource=false workspaceRoot=C:\Users\Oumar\SDM projectDir=./ appDir=./
+  • installing native dependencies  arch=x64
+  • completed installing native dependencies
+  • packaging       platform=win32 arch=x64 electron=44.3.0 appOutDir=dist\win-unpacked
+  • downloaded      label=electron progress=100%
+  • downloaded electron zip extracted successfully  output=C:\Users\Oumar\SDM\dist\win-unpacked
+  • searching for node modules  pm=npm searchDir=C:\Users\Oumar\SDM
+  • searching for node modules  pm=traversal searchDir=C:\Users\Oumar\SDM
+  • using manual traversal of node_modules to build dependency tree
+  • no node modules returned while searching directories  searchDirectories=[""]
+  • updating asar integrity executable resource  executablePath=dist\win-unpacked\SDM.exe
+  • signing with signtool.exe  path=dist\win-unpacked\SDM.exe
+  • building        target=nsis file=dist\SDM_Setup.exe archs=x64 oneClick=false perMachine=false
+  • signing with signtool.exe  path=dist\win-unpacked\resources\elevate.exe
+  • signing with signtool.exe  path=dist\SDM_Setup.__uninstaller.exe
+  • signing with signtool.exe  path=dist\SDM_Setup.exe
+  • building block map  blockMapFile=dist\SDM_Setup.exe.blockmap
+
+== EXIT code=0 ==
+
+--- node proc check done via powershell separately

@@ -1,0 +1,36 @@
+WindowsConfiguration keys:
+appId
+artifactName
+asar
+asarUnpack
+azureSignOptions
+compression
+cscKeyPassword
+cscLink
+defaultArch
+detectUpdateChannel
+disableDefaultIgnoredFiles
+electronLanguages
+electronUpdaterCompatibility
+executableName
+extraFiles
+extraResources
+fileAssociations
+files
+forceCodeSigning
+generateUpdatesFilesForAllChannels
+icon
+legalTrademarks
+protocols
+publish
+releaseInfo
+requestedExecutionLevel
+signAndEditExecutable
+signExecutable
+signExts
+signtoolOptions
+target
+verifyUpdateCodeSignature
+
+win prop ref:
+{"anyOf":[{"$ref":"#/definitions/WindowsConfiguration"},{"type":"null"}],"description":"Options related to how build Windows targets."}

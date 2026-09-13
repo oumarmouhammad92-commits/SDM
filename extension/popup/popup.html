@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <title>SDM</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <header class="popup-header">
+    <div class="popup-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"
+           stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 3v10" /><path d="m6 9 6 6 6-6" /><path d="M5 20h14" />
+      </svg>
+    </div>
+    <div class="popup-title">
+      <h1>SDM</h1>
+      <span>Sekou Download Manager</span>
+    </div>
+  </header>
+
+  <section class="status-row">
+    <span id="status-dot" class="status-dot"></span>
+    <span id="status-text" class="status-text">Vérification…</span>
+    <button id="btn-check" class="mini-btn" type="button">Vérifier</button>
+  </section>
+
+  <section class="history">
+    <h2>Derniers téléchargements</h2>
+    <div id="history-list" class="history-list"></div>
+    <p id="history-empty" class="history-empty">Aucun téléchargement détecté pour le moment.</p>
+  </section>
+
+  <footer class="popup-footer">
+    <button id="btn-options" class="link-btn" type="button">⚙ Options</button>
+  </footer>
+
+  <script src="popup.js"></script>
+</body>
+</html>

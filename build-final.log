@@ -1,0 +1,26 @@
+== build-dist demarre 2026-09-13T17:39:44.036Z ==
+
+> sdm@1.0.0 dist
+> electron-builder --win nsis --x64
+
+  • electron-builder  version=26.15.3 os=10.0.19045
+  • loaded configuration  file=package.json ("build" field)
+  • executing @electron/rebuild  electronVersion=44.3.0 arch=x64 buildFromSource=false workspaceRoot=C:\Users\Oumar\SDM projectDir=./ appDir=./
+  • installing native dependencies  arch=x64
+  • completed installing native dependencies
+  • packaging       platform=win32 arch=x64 electron=44.3.0 appOutDir=dist\win-unpacked
+  • downloaded      label=electron progress=100%
+  • downloaded electron zip extracted successfully  output=C:\Users\Oumar\SDM\dist\win-unpacked
+  • searching for node modules  pm=npm searchDir=C:\Users\Oumar\SDM
+  • searching for node modules  pm=traversal searchDir=C:\Users\Oumar\SDM
+  • using manual traversal of node_modules to build dependency tree
+  • no node modules returned while searching directories  searchDirectories=[""]
+  • updating asar integrity executable resource  executablePath=dist\win-unpacked\SDM.exe
+  • signing with signtool.exe  path=dist\win-unpacked\SDM.exe
+  • building        target=nsis file=dist\SDM_Setup.exe archs=x64 oneClick=false perMachine=false
+  • signing with signtool.exe  path=dist\win-unpacked\resources\elevate.exe
+  • signing with signtool.exe  path=dist\SDM_Setup.__uninstaller.exe
+  • signing with signtool.exe  path=dist\SDM_Setup.exe
+  • building block map  blockMapFile=dist\SDM_Setup.exe.blockmap
+
+== EXIT code=0 ==

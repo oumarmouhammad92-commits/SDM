@@ -1,0 +1,75 @@
+== Démarrage du test pid=10212 ts=1789313492178
+PASS  catégorie vidéo
+PASS  catégorie archive
+PASS  catégorie autre
+PASS  démarrage dl multi-connexions  -> segments=8
+PASS  dl multi-connexions terminé  -> status=completed segmentCount=8
+PASS  fichier sauvegardé  -> C:\Users\Oumar\AppData\Local\Temp\sdm-smoke-BgGQK7\SDM\Autres\big-file.bin
+PASS  fichier identique (sha256)
+PASS  nom depuis content-disposition  -> C:\Users\Oumar\AppData\Local\Temp\sdm-smoke-BgGQK7\SDM\Autres\big-file.bin
+PASS  fichier dans sous-dossier Autres  -> C:\Users\Oumar\AppData\Local\Temp\sdm-smoke-BgGQK7\SDM\Autres
+PASS  pause effective  -> status=paused bytes=3014656
+PASS  reprise -> terminé  -> status=completed
+PASS  reprise depuis le point de pause  -> bytesPause=3014656 bytesFin=5242880
+PASS  fichier reprise identique
+PASS  serveur /api/health  -> {"ok":true,"name":"SDM","version":"1.0.0"}
+PASS  serveur /api/add  -> id=mtzz21n9-honssn
+PASS  serveur /api/add (fichier unique)  -> C:\Users\Oumar\AppData\Local\Temp\sdm-smoke-BgGQK7\SDM\Autres\big-file (1).bin
+PASS  serveur /api/list  -> nb=3
+PASS  serveur /api/add sans URL -> rejeté
+PASS  serveur route inconnue -> 404
+PASS  HLS démarré
+PASS  HLS terminé (3 segments assemblés)  -> status=completed bytes=60
+PASS  HLS sorti en .ts  -> C:\Users\Oumar\AppData\Local\Temp\sdm-smoke-BgGQK7\SDM\Vidéo\master.ts
+
+===== RÉSULTAT : 22/22 tests OK =====
+== Démarrage du test pid=4996 ts=1789313589089
+PASS  catégorie vidéo
+PASS  catégorie archive
+PASS  catégorie autre
+PASS  démarrage dl multi-connexions  -> segments=8
+PASS  dl multi-connexions terminé  -> status=completed segmentCount=8
+PASS  fichier sauvegardé  -> C:\Users\Oumar\AppData\Local\Temp\sdm-smoke-e5IUlF\SDM\Autres\big-file.bin
+PASS  fichier identique (sha256)
+PASS  nom depuis content-disposition  -> C:\Users\Oumar\AppData\Local\Temp\sdm-smoke-e5IUlF\SDM\Autres\big-file.bin
+PASS  fichier dans sous-dossier Autres  -> C:\Users\Oumar\AppData\Local\Temp\sdm-smoke-e5IUlF\SDM\Autres
+PASS  pause effective  -> status=paused bytes=3014656
+PASS  reprise -> terminé  -> status=completed
+PASS  reprise depuis le point de pause  -> bytesPause=3014656 bytesFin=5242880
+PASS  fichier reprise identique
+PASS  serveur /api/health  -> {"ok":true,"name":"SDM","version":"1.0.0"}
+PASS  serveur /api/add  -> id=mtzz44eo-bpkhj6
+PASS  serveur /api/add (fichier unique)  -> C:\Users\Oumar\AppData\Local\Temp\sdm-smoke-e5IUlF\SDM\Autres\big-file (1).bin
+PASS  serveur /api/list  -> nb=3
+PASS  serveur /api/add sans URL -> rejeté
+PASS  serveur route inconnue -> 404
+PASS  HLS démarré
+PASS  HLS terminé (3 segments assemblés)  -> status=completed bytes=60
+PASS  HLS sorti en .ts  -> C:\Users\Oumar\AppData\Local\Temp\sdm-smoke-e5IUlF\SDM\Vidéo\master.ts
+
+===== RÉSULTAT : 22/22 tests OK =====
+== Démarrage du test pid=5828 ts=1789321296326
+PASS  catégorie vidéo
+PASS  catégorie archive
+PASS  catégorie autre
+PASS  démarrage dl multi-connexions  -> segments=8
+PASS  dl multi-connexions terminé  -> status=completed segmentCount=8
+PASS  fichier sauvegardé  -> C:\Users\Oumar\AppData\Local\Temp\sdm-smoke-77U8rc\SDM\Autres\big-file.bin
+PASS  fichier identique (sha256)
+PASS  nom depuis content-disposition  -> C:\Users\Oumar\AppData\Local\Temp\sdm-smoke-77U8rc\SDM\Autres\big-file.bin
+PASS  fichier dans sous-dossier Autres  -> C:\Users\Oumar\AppData\Local\Temp\sdm-smoke-77U8rc\SDM\Autres
+PASS  pause effective  -> status=paused bytes=3145728
+PASS  reprise -> terminé  -> status=completed
+PASS  reprise depuis le point de pause  -> bytesPause=3145728 bytesFin=5242880
+PASS  fichier reprise identique
+PASS  serveur /api/health  -> {"ok":true,"name":"SDM","version":"1.0.0"}
+PASS  serveur /api/add  -> id=mu03pbch-04fi37
+PASS  serveur /api/add (fichier unique)  -> C:\Users\Oumar\AppData\Local\Temp\sdm-smoke-77U8rc\SDM\Autres\big-file (1).bin
+PASS  serveur /api/list  -> nb=3
+PASS  serveur /api/add sans URL -> rejeté
+PASS  serveur route inconnue -> 404
+PASS  HLS démarré
+PASS  HLS terminé (3 segments assemblés)  -> status=completed bytes=60
+PASS  HLS sorti en .ts  -> C:\Users\Oumar\AppData\Local\Temp\sdm-smoke-77U8rc\SDM\Vidéo\master.ts
+
+===== RÉSULTAT : 22/22 tests OK =====

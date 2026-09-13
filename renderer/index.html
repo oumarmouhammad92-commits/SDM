@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:;" />
+  <title>SDM - Sekou Download Manager</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <!-- ======================= En-tête ======================= -->
+  <header class="app-header">
+    <div class="brand">
+      <div class="brand-logo" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+             stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 3v10" /><path d="m6 9 6 6 6-6" /><path d="M5 20h14" />
+        </svg>
+      </div>
+      <div class="brand-text">
+        <h1>SDM</h1>
+        <span>Sekou Download Manager</span>
+      </div>
+    </div>
+
+    <div class="header-right">
+      <div class="save-location" title="Dossier de téléchargement">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round">
+          <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+        </svg>
+        <span id="save-dir-label">Téléchargements\SDM</span>
+        <button id="btn-choose-dir" class="icon-btn small" title="Choisir un autre dossier">…</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="app-main">
+
+    <!-- ======================= Statistiques ======================= -->
+    <section class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon blue">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="7" height="7" rx="1" />
+            <rect x="14" y="3" width="7" height="7" rx="1" />
+            <rect x="3" y="14" width="7" height="7" rx="1" />
+            <rect x="14" y="14" width="7" height="7" rx="1" />
+          </svg>
+        </div>
+        <div class="stat-info">
+          <span class="stat-value" id="stat-total">0</span>
+          <span class="stat-label">Téléchargements</span>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon cyan">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2v8" /><path d="m15 6-3 4-3-4" />
+            <path d="M5 12v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6" />
+          </svg>
+        </div>
+        <div class="stat-info">
+          <span class="stat-value" id="stat-active">0</span>
+          <span class="stat-label">En cours</span>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon green">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 6 9 17l-5-5" />
+          </svg>
+        </div>
+        <div class="stat-info">
+          <span class="stat-value" id="stat-completed">0</span>
+          <span class="stat-label">Terminés</span>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon amber">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round">
+            <path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z" />
+          </svg>
+        </div>
+        <div class="stat-info">
+          <span class="stat-value" id="stat-speed">0 B/s</span>
+          <span class="stat-label">Vitesse totale</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================= Serveur local & extension ======================= -->
+    <section class="server-banner" id="server-banner">
+      <div class="server-left">
+        <span class="server-dot" id="server-dot"></span>
+        <div class="server-text">
+          <strong id="server-title">Démarrage du serveur…</strong>
+          <span id="server-sub">Extension navigateur : Chaque téléchargement peut être envoyé à SDM.</span>
+        </div>
+      </div>
+      <div class="server-actions">
+        <button id="btn-ext-folder" class="btn-ghost" type="button">📁 Dossier extension</button>
+        <button id="btn-server-refresh" class="btn-ghost" type="button">↻</button>
+      </div>
+    </section>
+
+    <!-- ======================= Zone d'ajout ======================= -->
+    <section class="add-download">
+      <div class="url-field">
+        <svg class="url-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round">
+          <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+          <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+        </svg>
+        <input id="url-input" type="text" placeholder="Collez le lien du fichier à télécharger…"
+               autocomplete="off" spellcheck="false" />
+        <button id="btn-download" class="btn-download">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+               stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 3v12" /><path d="m6 9 6 6 6-6" /><path d="M5 21h14" />
+          </svg>
+          <span>Télécharger</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- ======================= Filtres ======================= -->
+    <section class="filters">
+      <button class="filter-btn active" data-filter="all">Tous</button>
+      <button class="filter-btn" data-filter="active">Actifs</button>
+      <button class="filter-btn" data-filter="completed">Terminés</button>
+      <button class="filter-btn" data-filter="paused">En pause</button>
+      <button class="filter-btn" data-filter="error">En erreur</button>
+    </section>
+
+    <!-- ======================= Liste des téléchargements ======================= -->
+    <section class="downloads-panel">
+      <div id="downloads-list" class="downloads-list"></div>
+
+      <div id="empty-state" class="empty-state">
+        <div class="empty-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"
+               stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 3v10" /><path d="m6 9 6 6 6-6" /><path d="M4 19h16" />
+          </svg>
+        </div>
+        <h2>Aucun téléchargement</h2>
+        <p>Collez le lien d'un fichier ci-dessus et cliquez sur <strong>Télécharger</strong>.</p>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ======================= Notifications ======================= -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <script src="renderer.js"></script>
+</body>
+</html>
