@@ -15,9 +15,9 @@ const MAX_SEGMENTS = 64;
 const PROGRESS_EMIT_MS = 100;
 const CONNECTION_TIMEOUT = 30000;
 const SOCKET_TIMEOUT = 60000;
-const MAX_RETRIES = 5;
+const MAX_RETRIES = 10;
 const RETRY_BACKOFF_BASE = 2000;
-const RETRY_BACKOFF_MAX = 30000;
+const RETRY_BACKOFF_MAX = 60000;
 const REDIRECT_LIMIT = 10;
 const HLS_CONCURRENCY = 32;
 const DASH_CONCURRENCY = 32;
@@ -25,6 +25,9 @@ const SPEED_SAMPLE_WINDOW = 5000;
 const SEGMENT_MIN_SIZE = 256 * 1024;
 const SEGMENT_MAX_SIZE = 64 * 1024 * 1024;
 const ADAPTIVE_SEGMENT_ADJUST_MS = 3000;
+const MAX_TOTAL_ATTEMPTS = 50;
+const SEGMENT_ERROR_THRESHOLD = 10;
+const RANGE_UNRELIABLE_THRESHOLD = 3;
 
 const CATEGORY_DIRS = { video: 'Vidéo', audio: 'Audio', doc: 'Documents', archive: 'Archives', image: 'Images', app: 'Applications', other: 'Autres' };
 const EXT_CATEGORIES = {
@@ -35,7 +38,7 @@ const EXT_CATEGORIES = {
   image: ['jpg','jpeg','png','gif','svg','webp','bmp','ico','tiff','heic','avif'],
   app: ['exe','msi','apk','msix','appx','deb','rpm','dmg','iso','jar','pkg','run'],
 };
-const RETRYABLE_ERRORS = new Set(['ECONNRESET','ETIMEDOUT','ECONNREFUSED','ENOTFOUND','ENETUNREACH','EHOSTUNREACH','EPIPE','ECONNABORTED','EAI_AGAIN','ERR_SOCKET_TIMED_OUT','ERR_NETWORK','UND_ERR_SOCKET']);
+const RETRYABLE_ERRORS = new Set(['ECONNRESET','ETIMEDOUT','ECONNREFUSED','ENOTFOUND','ENETUNREACH','EHOSTUNREACH','EPIPE','ECONNABORTED','EAI_AGAIN','ERR_SOCKET_TIMED_OUT','ERR_NETWORK','UND_ERR_SOCKET','HTTP429']);
 const httpAgent = new http.Agent({ keepAlive: true, maxSockets: MAX_SEGMENTS + 4, maxFreeSockets: 16, timeout: SOCKET_TIMEOUT });
 const httpsAgent = new https.Agent({ keepAlive: true, maxSockets: MAX_SEGMENTS + 4, maxFreeSockets: 16, timeout: SOCKET_TIMEOUT, rejectUnauthorized: true });
 const downloads = new Map();
@@ -47,7 +50,7 @@ function emit2(type, payload) { if (eventSink) eventSink(type, payload); }
 function makeId() { return Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10); }
 function sleep(ms) { return new Promise(function(resolve) { setTimeout(resolve, ms); }); }
 function backoffDelay(attempt) { return Math.floor(Math.min(RETRY_BACKOFF_BASE * Math.pow(2, attempt) + Math.random() * 1000, RETRY_BACKOFF_MAX)); }
-function isRetryableError(err) { if (!err) return false; if (RETRYABLE_ERRORS.has(err.code)) return true; var msg = String(err.message || '').toLowerCase(); return msg.indexOf('reset') >= 0 || msg.indexOf('timeout') >= 0 || msg.indexOf('refused') >= 0 || msg.indexOf('socket') >= 0 || msg.indexOf('network') >= 0 || msg.indexOf('econn') >= 0 || msg.indexOf('premature close') >= 0 || msg.indexOf('aborted') >= 0; }
+function isRetryableError(err) { if (!err) return false; if (RETRYABLE_ERRORS.has(err.code)) return true; var msg = String(err.message || '').toLowerCase(); return msg.indexOf('reset') >= 0 || msg.indexOf('timeout') >= 0 || msg.indexOf('refused') >= 0 || msg.indexOf('socket') >= 0 || msg.indexOf('network') >= 0 || msg.indexOf('econn') >= 0 || msg.indexOf('premature close') >= 0 || msg.indexOf('aborted') >= 0 || msg.indexOf('429') >= 0 || msg.indexOf('incomplete') >= 0 || msg.indexOf('range') >= 0; }
 function fileSize(fp) { try { var st = fs.statSync(fp); return st.isFile() ? st.size : 0; } catch (_) { return 0; } }
 function getExtension(fn) { var lower = String(fn || '').toLowerCase(); var idx = lower.lastIndexOf('.'); return idx >= 0 ? lower.slice(idx + 1) : ''; }
 function getCategory(fn) { var ext = getExtension(fn); for (var cat in EXT_CATEGORIES) { if (EXT_CATEGORIES[cat].indexOf(ext) >= 0) return cat; } return 'other'; }
@@ -125,7 +128,13 @@ function httpGetWithRetry(url, headers, options) {
         }).catch(function(err) {
           lastError = err;
           if (!isRetryableError(err) || attempt >= maxRetries) { reject(err); return; }
-          attempt++; setTimeout(loop, backoffDelay(attempt - 1));
+          attempt++;
+          var delay = backoffDelay(attempt);
+          if (err.statusCode === 429 || (err.message && err.message.indexOf('HTTP 429') >= 0)) {
+            delay = Math.max(delay, 10000);
+            try { var retryAfter = response.headers['retry-after']; if (retryAfter) delay = Math.max(delay, parseInt(retryAfter, 10) * 1000); } catch (_) {}
+          }
+          setTimeout(loop, delay);
         });
       }
       loop();
@@ -234,39 +243,71 @@ function fail(dl, message) {
 }
 function downloadSegment(dl, seg, onProgress) {
   seg.retryCount = seg.retryCount || 0;
-  return httpGetWithRetry(dl.url, { 'Range': 'bytes=' + seg.start + '-' + seg.end }, { maxRetries: MAX_RETRIES, timeout: CONNECTION_TIMEOUT + seg.index * 100 }).then(function(response) {
-    return new Promise(function(resolve, reject) {
-      var ws = fs.createWriteStream(seg.filePath);
-      var received = 0;
-      var emitThrottle = 0;
-      ws.on('error', function(err) { try { ws.destroy(); } catch (_) {} reject(err); });
-      ws.on('finish', function() { resolve(); });
-      response.on('data', function(chunk) {
-        received += chunk.length; seg.received = received;
-        var now = Date.now();
-        if (now - emitThrottle >= 50) { emitThrottle = now; if (onProgress) onProgress(received); }
-      });
-      response.on('end', function() { ws.end(); });
-      response.on('error', function(err) { try { ws.destroy(); } catch (_) {} reject(err); });
-    });
-  }).then(function() {
-    if (fileSize(seg.filePath) !== seg.end - seg.start + 1) throw new Error('Incomplete segment ' + seg.index);
-    seg.done = true;
-  }).catch(function(err) {
-    if (isRetryableError(err) && seg.retryCount < MAX_RETRIES) {
-      seg.retryCount++;
-      seg.received = 0;
-      try { fs.unlinkSync(seg.filePath); } catch (_) {}
-      return sleep(backoffDelay(seg.retryCount)).then(function() { return downloadSegment(dl, seg, onProgress); });
+  seg.totalAttempts = seg.totalAttempts || 0;
+  var expectedSize = seg.end - seg.start + 1;
+  var attempt = 0;
+  function tryDownload() {
+    if (dl.pauseRequested || dl.status !== 'downloading') return Promise.resolve();
+    attempt++;
+    seg.totalAttempts++;
+    dl.totalAttempts = (dl.totalAttempts || 0) + 1;
+    if (dl.totalAttempts > MAX_TOTAL_ATTEMPTS && dl.segmentErrors > SEGMENT_ERROR_THRESHOLD) {
+      throw new Error('MAX_ATTEMPTS_EXHAUSTED');
     }
-    throw err;
-  });
+    var existingSize = fileSize(seg.filePath);
+    if (existingSize > 0 && existingSize < expectedSize) {
+      seg.received = existingSize;
+      seg.start = seg.start + existingSize;
+    } else if (existingSize >= expectedSize) {
+      seg.done = true;
+      seg.received = existingSize;
+      return Promise.resolve();
+    }
+    var rangeHeader = 'bytes=' + seg.start + '-' + seg.end;
+    return httpGetWithRetry(dl.url, { 'Range': rangeHeader }, { maxRetries: MAX_RETRIES, timeout: CONNECTION_TIMEOUT + seg.index * 100 }).then(function(response) {
+      return new Promise(function(resolve, reject) {
+        var ws = fs.createWriteStream(seg.filePath, { flags: 'a' });
+        var received = 0;
+        var emitThrottle = 0;
+        ws.on('error', function(err) { try { ws.destroy(); } catch (_) {} reject(err); });
+        ws.on('finish', function() { resolve(); });
+        response.on('data', function(chunk) {
+          received += chunk.length;
+          seg.received = seg.received + chunk.length;
+          var now = Date.now();
+          if (now - emitThrottle >= 50) { emitThrottle = now; if (onProgress) onProgress(seg.received); }
+        });
+        response.on('end', function() { ws.end(); });
+        response.on('error', function(err) { try { ws.destroy(); } catch (_) {} reject(err); });
+      });
+    }).then(function() {
+      var actualSize = fileSize(seg.filePath);
+      if (actualSize >= expectedSize + (seg.start - seg.start)) {
+        seg.done = true;
+        seg.received = actualSize;
+        return;
+      }
+      throw new Error('INCOMPLETE_RETRY');
+    }).catch(function(err) {
+      if (dl.pauseRequested || dl.status !== 'downloading') return Promise.resolve();
+      seg.retryCount++;
+      dl.segmentErrors = (dl.segmentErrors || 0) + 1;
+      if (err.message && err.message.indexOf('INCOMPLETE_RETRY') >= 0 && seg.retryCount < MAX_RETRIES) {
+        return sleep(backoffDelay(seg.retryCount)).then(tryDownload);
+      }
+      if (isRetryableError(err) && seg.retryCount < MAX_RETRIES) {
+        return sleep(backoffDelay(seg.retryCount)).then(tryDownload);
+      }
+      throw err;
+    });
+  }
+  return tryDownload();
 }
 function startDownload(url, options) {
   options = options || {};
   if (!url || !/^https?:/i.test(url)) return { ok: false, error: 'Invalid URL' };
   var id = makeId();
-  var dl = { id: id, url: url, filename: null, savePath: null, base: null, metaPath: null, totalBytes: 0, receivedBytes: 0, status: 'starting', category: 'other', error: null, segments: [], segmentCount: 0, retryCount: 0, resumable: false, streamType: null, pauseRequested: false, startedAt: Date.now(), lastEmit: 0, request: null, stream: null, segmentErrors: 0 };
+  var dl = { id: id, url: url, filename: null, savePath: null, base: null, metaPath: null, totalBytes: 0, receivedBytes: 0, status: 'starting', category: 'other', error: null, segments: [], segmentCount: 0, retryCount: 0, resumable: false, streamType: null, pauseRequested: false, startedAt: Date.now(), lastEmit: 0, request: null, stream: null, segmentErrors: 0, totalAttempts: 0, rangeUnreliableCount: 0, currentSegCount: 0 };
   downloads.set(id, dl);
   emit2('status', snapshot(dl));
 
@@ -294,15 +335,8 @@ function startDownload(url, options) {
           dl.resumable = true;
           dl.streamType = 'direct';
           var segCount = computeSegmentCount(rangeResult.size, options.segments);
-          var segSize = Math.floor(rangeResult.size / segCount);
-          var segments = [];
-          for (var i = 0; i < segCount; i++) {
-            var start = i * segSize;
-            var end = (i === segCount - 1) ? rangeResult.size - 1 : start + segSize - 1;
-            segments.push({ index: i, start: start, end: end, received: 0, filePath: segPath(savePath, i), done: false, active: false, stream: null, request: null });
-          }
-          dl.segments = segments;
-          dl.segmentCount = segCount;
+          dl.currentSegCount = segCount;
+          buildSegments(dl, segCount);
         } else {
           dl.resumable = false;
           dl.streamType = 'direct';
@@ -314,32 +348,7 @@ function startDownload(url, options) {
         dl.lastEmit = 0;
         emit2('status', snapshot(dl));
         if (dl.resumable && dl.segments.length > 0) {
-          var workers = [];
-          var workerCount = Math.min(dl.segments.length, MAX_SEGMENTS);
-          for (var w = 0; w < workerCount; w++) {
-            workers.push((function() {
-              function next() {
-                if (dl.pauseRequested || dl.status !== 'downloading') return Promise.resolve();
-                var seg = null;
-                for (var i = 0; i < dl.segments.length; i++) { if (!dl.segments[i].done && !dl.segments[i].active) { seg = dl.segments[i]; break; } }
-                if (!seg) { if (dl.segments.every(function(s) { return s.done; })) return Promise.resolve(); return sleep(200).then(next); }
-                seg.active = true;
-                return downloadSegment(dl, seg, function(bytes) {
-                  dl.receivedBytes = sumSegments(dl);
-                  var now = Date.now();
-                  if (now - dl.lastEmit >= PROGRESS_EMIT_MS) { dl.lastEmit = now; emit2('progress', snapshot(dl)); }
-                }).then(function() { seg.active = false; return next(); }).catch(function(err) {
-                  seg.active = false;
-                  if (dl.pauseRequested || dl.status !== 'downloading') return;
-                  dl.segmentErrors = (dl.segmentErrors || 0) + 1;
-                  if (dl.segmentErrors > dl.segments.length) { fail(dl, 'Trop d\'erreurs: ' + err.message); return; }
-                  return next();
-                });
-              }
-              return next();
-            })());
-          }
-          Promise.all(workers).then(function() { if (dl.status === 'downloading') maybeComplete(dl); });
+          startSegmentWorkers(dl);
         } else {
           directDownload(dl);
         }
@@ -349,6 +358,71 @@ function startDownload(url, options) {
     });
   }, 0);
   return { ok: true, download: snapshot(dl) };
+}
+
+function buildSegments(dl, segCount) {
+  var segSize = Math.floor(dl.totalBytes / segCount);
+  var segments = [];
+  for (var i = 0; i < segCount; i++) {
+    var start = i * segSize;
+    var end = (i === segCount - 1) ? dl.totalBytes - 1 : start + segSize - 1;
+    segments.push({ index: i, start: start, end: end, received: 0, filePath: segPath(dl.savePath, i), done: false, active: false, stream: null, request: null, retryCount: 0, totalAttempts: 0 });
+  }
+  dl.segments = segments;
+  dl.segmentCount = segCount;
+}
+
+function startSegmentWorkers(dl) {
+  var workers = [];
+  var workerCount = Math.min(dl.segments.length, MAX_SEGMENTS);
+  for (var w = 0; w < workerCount; w++) {
+    workers.push((function() {
+      function next() {
+        if (dl.pauseRequested || dl.status !== 'downloading') return Promise.resolve();
+        var seg = null;
+        for (var i = 0; i < dl.segments.length; i++) { if (!dl.segments[i].done && !dl.segments[i].active) { seg = dl.segments[i]; break; } }
+        if (!seg) { if (dl.segments.every(function(s) { return s.done; })) return Promise.resolve(); return sleep(200).then(next); }
+        seg.active = true;
+        return downloadSegment(dl, seg, function(bytes) {
+          dl.receivedBytes = sumSegments(dl);
+          var now = Date.now();
+          if (now - dl.lastEmit >= PROGRESS_EMIT_MS) { dl.lastEmit = now; emit2('progress', snapshot(dl)); }
+        }).then(function() { seg.active = false; return next(); }).catch(function(err) {
+          seg.active = false;
+          if (dl.pauseRequested || dl.status !== 'downloading') return;
+          dl.segmentErrors = (dl.segmentErrors || 0) + 1;
+          dl.rangeUnreliableCount = (dl.rangeUnreliableCount || 0) + 1;
+          if (err.message === 'MAX_ATTEMPTS_EXHAUSTED' || dl.totalAttempts > MAX_TOTAL_ATTEMPTS) {
+            if (dl.currentSegCount > 1 && dl.rangeUnreliableCount >= RANGE_UNRELIABLE_THRESHOLD) {
+              dl.rangeUnreliableCount = 0;
+              var newCount = Math.max(1, Math.floor(dl.currentSegCount / 2));
+              if (newCount < dl.currentSegCount) {
+                dl.currentSegCount = newCount;
+                cleanupSegments(dl);
+                buildSegments(dl, newCount);
+                saveMeta(dl);
+                emit2('status', snapshot(dl));
+                return startSegmentWorkers(dl);
+              }
+            }
+            if (dl.currentSegCount > 1) {
+              dl.currentSegCount = 1;
+              cleanupSegments(dl);
+              buildSegments(dl, 1);
+              saveMeta(dl);
+              emit2('status', snapshot(dl));
+              return startSegmentWorkers(dl);
+            }
+            fail(dl, 'MAX_ATTEMPTS_EXHAUSTED: ' + err.message);
+            return;
+          }
+          return sleep(500).then(next);
+        });
+      }
+      return next();
+    })());
+  }
+  Promise.all(workers).then(function() { if (dl.status === 'downloading') maybeComplete(dl); });
 }
 function directDownload(dl) {
   dl.status = 'downloading';
