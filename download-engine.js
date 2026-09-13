@@ -5,13 +5,13 @@ const http = require('http');
 const https = require('https');
 const { URL } = require('url');
 
-let APP_VERSION = '1.1.0';
+let APP_VERSION = '1.2.0';
 try { APP_VERSION = require('./package.json').version || APP_VERSION; } catch (_) {}
 
 const USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 SDM/' + APP_VERSION;
-const DEFAULT_SEGMENTS = 16;
-const MIN_SEGMENTS = 4;
-const MAX_SEGMENTS = 32;
+const DEFAULT_SEGMENTS = 32;
+const MIN_SEGMENTS = 1;
+const MAX_SEGMENTS = 64;
 const PROGRESS_EMIT_MS = 100;
 const CONNECTION_TIMEOUT = 30000;
 const SOCKET_TIMEOUT = 60000;
@@ -19,8 +19,12 @@ const MAX_RETRIES = 5;
 const RETRY_BACKOFF_BASE = 2000;
 const RETRY_BACKOFF_MAX = 30000;
 const REDIRECT_LIMIT = 10;
-const HLS_CONCURRENCY = 16;
-const DASH_CONCURRENCY = 16;
+const HLS_CONCURRENCY = 32;
+const DASH_CONCURRENCY = 32;
+const SPEED_SAMPLE_WINDOW = 5000;
+const SEGMENT_MIN_SIZE = 256 * 1024;
+const SEGMENT_MAX_SIZE = 64 * 1024 * 1024;
+const ADAPTIVE_SEGMENT_ADJUST_MS = 3000;
 
 const CATEGORY_DIRS = { video: 'Vidéo', audio: 'Audio', doc: 'Documents', archive: 'Archives', image: 'Images', app: 'Applications', other: 'Autres' };
 const EXT_CATEGORIES = {
@@ -63,7 +67,29 @@ function sumSegments(dl) { var sum = 0; for (var i = 0; i < dl.segments.length; 
 function snapshot(dl) { var totalBytes = dl.totalBytes || 0; var receivedBytes = dl.receivedBytes || 0; var elapsed = Date.now() - dl.startedAt; var speed = elapsed > 250 ? (receivedBytes / (elapsed / 1000)) : 0; var segmentsDone = dl.segments ? dl.segments.filter(function(s) { return s.done; }).length : 0; var activeSegments = dl.segments ? dl.segments.filter(function(s) { return !s.done && (s.request || s.stream || s.active); }).length : 0; return { id: dl.id, url: dl.url, filename: dl.filename, savePath: dl.savePath, totalBytes: totalBytes, receivedBytes: receivedBytes, status: dl.status, category: dl.category, error: dl.error || null, speed: speed, segments: dl.segmentCount || 0, segmentsDone: segmentsDone, activeSegments: activeSegments, retryCount: dl.retryCount || 0, resumable: !!dl.resumable, streamType: dl.streamType || null, eta: speed > 0 && totalBytes > 0 ? Math.max(0, Math.round((totalBytes - receivedBytes) / speed)) : null }; }
 function filenameFromUrl(url, headers) { var cd = headers && (headers['content-disposition'] || ''); if (cd) { var m = cd.match(/filename\\*=UTF-8''(.+?)(?:;|$)/i); if (m) try { return sanitizeFilename(decodeURIComponent(m[1].trim().replace(/^\"|\"$/g, ''))); } catch (_) {} m = cd.match(/filename\\*=[^']+''(.+?)(?:;|$)/i); if (m) try { return sanitizeFilename(decodeURIComponent(m[1].trim().replace(/^\"|\"$/g, ''))); } catch (_) {} m = cd.match(/filename=\"([^\"]+)\"/i); if (m) return sanitizeFilename(m[1]); m = cd.match(/filename=([^;]+)/i); if (m) return sanitizeFilename(m[1].trim()); } try { var u = new URL(url); var p = u.pathname.split('/').filter(Boolean).pop(); if (p) { var decoded = decodeURIComponent(p); var clean = sanitizeFilename(decoded); if (clean && getExtension(clean)) return clean; if (clean) return clean; } } catch (_) {} return null; }
 function resolveUrl(base, ref) { try { return new URL(ref, base).href; } catch (_) { return ref; } }
-function computeSegmentCount(total, requested) { if (!total || total <= 0) return requested || DEFAULT_SEGMENTS; if (requested) return Math.min(Math.max(requested, MIN_SEGMENTS), MAX_SEGMENTS); var bySize = Math.ceil(total / (8 * 1024 * 1024)); var count = Math.min(Math.max(bySize, MIN_SEGMENTS), MAX_SEGMENTS); return count; }
+function computeSegmentCount(total, requested) {
+  if (requested) return Math.min(Math.max(requested, MIN_SEGMENTS), MAX_SEGMENTS);
+  if (!total || total <= 0) return DEFAULT_SEGMENTS;
+  if (total < SEGMENT_MIN_SIZE) return 1;
+  var bySize = Math.ceil(total / (4 * 1024 * 1024));
+  return Math.min(Math.max(bySize, MIN_SEGMENTS), MAX_SEGMENTS);
+}
+function computeAdaptiveSegmentCount(total, currentSpeed, activeSegments, currentCount) {
+  if (!total || total <= 0 || !currentSpeed || currentSpeed <= 0) return currentCount;
+  var remaining = total - (currentSpeed * 30);
+  if (remaining <= 0) return currentCount;
+  var speedMbps = currentSpeed * 8 / (1024 * 1024);
+  var optimalCount = currentCount;
+  if (speedMbps > 100) optimalCount = 64;
+  else if (speedMbps > 50) optimalCount = 48;
+  else if (speedMbps > 25) optimalCount = 32;
+  else if (speedMbps > 10) optimalCount = 24;
+  else if (speedMbps > 5) optimalCount = 16;
+  else if (speedMbps > 2) optimalCount = 8;
+  else if (speedMbps > 0.5) optimalCount = 4;
+  else optimalCount = 2;
+  return Math.min(Math.max(optimalCount, MIN_SEGMENTS), MAX_SEGMENTS);
+}
 function httpGetWithRetry(url, headers, options) {
   options = options || {};
   var maxRetries = options.maxRetries != null ? options.maxRetries : MAX_RETRIES;

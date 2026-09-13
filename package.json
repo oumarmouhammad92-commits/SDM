@@ -1,7 +1,7 @@
 {
   "name": "sdm",
-  "version": "1.1.0",
-  "description": "SDM (Sekou Download Manager) - Gestionnaire de téléchargements moderne pour Windows",
+  "version": "1.2.0",
+  "description": "SDM (Sekou Download Manager) - Gestionnaire de téléchargement multi-connexions professionnel pour Windows. Compatible Chrome, Edge, Brave, Opera, Vivaldi, Arc, Chromium, Firefox.",
   "main": "main.js",
   "author": "Sekou",
   "license": "MIT",
@@ -34,6 +34,8 @@
       "LICENSE",
       "renderer/**/*",
       "assets/**/*",
+      "tools/sdm-browser-helper.ps1",
+      "tools/installer.nsh",
       "!assets/*.psd",
       "!**/*.map"
     ],
@@ -67,7 +69,8 @@
       "shortcutName": "SDM",
       "installerIcon": "assets/app-icon.ico",
       "uninstallerIcon": "assets/app-icon.ico",
-      "deleteAppDataOnUninstall": false
+      "deleteAppDataOnUninstall": false,
+      "include": "tools/installer.nsh"
     }
   }
 }
