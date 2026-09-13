@@ -1,6 +1,6 @@
 {
   "name": "sdm",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "SDM (Sekou Download Manager) - Gestionnaire de téléchargements moderne pour Windows",
   "main": "main.js",
   "author": "Sekou",
