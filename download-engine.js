@@ -5,29 +5,26 @@ const http = require('http');
 const https = require('https');
 const { URL } = require('url');
 
-let APP_VERSION = '1.2.0';
+let APP_VERSION = '2.1.0';
 try { APP_VERSION = require('./package.json').version || APP_VERSION; } catch (_) {}
 
 const USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 SDM/' + APP_VERSION;
 const DEFAULT_SEGMENTS = 32;
 const MIN_SEGMENTS = 1;
 const MAX_SEGMENTS = 64;
-const PROGRESS_EMIT_MS = 100;
+const PROGRESS_EMIT_MS = 200;
 const CONNECTION_TIMEOUT = 30000;
 const SOCKET_TIMEOUT = 60000;
-const MAX_RETRIES = 10;
-const RETRY_BACKOFF_BASE = 2000;
+const MAX_RETRIES = 15;
+const RETRY_BACKOFF_BASE = 1000;
 const RETRY_BACKOFF_MAX = 60000;
 const REDIRECT_LIMIT = 10;
 const HLS_CONCURRENCY = 32;
 const DASH_CONCURRENCY = 32;
-const SPEED_SAMPLE_WINDOW = 5000;
-const SEGMENT_MIN_SIZE = 256 * 1024;
-const SEGMENT_MAX_SIZE = 64 * 1024 * 1024;
-const ADAPTIVE_SEGMENT_ADJUST_MS = 3000;
-const MAX_TOTAL_ATTEMPTS = 50;
-const SEGMENT_ERROR_THRESHOLD = 10;
+const MAX_TOTAL_ATTEMPTS = 100;
+const SEGMENT_ERROR_THRESHOLD = 15;
 const RANGE_UNRELIABLE_THRESHOLD = 3;
+const SPEED_HISTORY_SIZE = 10;
 
 const CATEGORY_DIRS = { video: 'Vidéo', audio: 'Audio', doc: 'Documents', archive: 'Archives', image: 'Images', app: 'Applications', other: 'Autres' };
 const EXT_CATEGORIES = {
@@ -66,8 +63,59 @@ function saveMeta(dl) { try { var meta = { id: dl.id, url: dl.url, filename: dl.
 function clearMeta(dl) { try { if (dl.metaPath) fs.unlinkSync(dl.metaPath); } catch (_) {} }
 function segPath(bp, idx) { return bp + '.part' + String(idx).padStart(3, '0'); }
 function cleanupSegments(dl) { if (!dl.segments) return; dl.segments.forEach(function(s) { try { if (s.filePath) fs.unlinkSync(s.filePath); } catch (_) {} }); }
-function sumSegments(dl) { var sum = 0; for (var i = 0; i < dl.segments.length; i++) { var s = dl.segments[i]; if (s.done) sum += (s.end - s.start + 1); else sum += s.received || 0; } return sum; }
-function snapshot(dl) { var totalBytes = dl.totalBytes || 0; var receivedBytes = dl.receivedBytes || 0; var elapsed = Date.now() - dl.startedAt; var speed = elapsed > 250 ? (receivedBytes / (elapsed / 1000)) : 0; var segmentsDone = dl.segments ? dl.segments.filter(function(s) { return s.done; }).length : 0; var activeSegments = dl.segments ? dl.segments.filter(function(s) { return !s.done && (s.request || s.stream || s.active); }).length : 0; return { id: dl.id, url: dl.url, filename: dl.filename, savePath: dl.savePath, totalBytes: totalBytes, receivedBytes: receivedBytes, status: dl.status, category: dl.category, error: dl.error || null, speed: speed, segments: dl.segmentCount || 0, segmentsDone: segmentsDone, activeSegments: activeSegments, retryCount: dl.retryCount || 0, resumable: !!dl.resumable, streamType: dl.streamType || null, eta: speed > 0 && totalBytes > 0 ? Math.max(0, Math.round((totalBytes - receivedBytes) / speed)) : null }; }
+function sumSegments(dl) {
+  var sum = 0;
+  for (var i = 0; i < dl.segments.length; i++) {
+    var s = dl.segments[i];
+    if (s.done) {
+      sum += (s.end - s.originalStart + 1);
+    } else {
+      var actual = fileSize(s.filePath);
+      sum += actual;
+      s.received = actual;
+    }
+  }
+  return sum;
+}
+
+function snapshot(dl) {
+  var totalBytes = dl.totalBytes || 0;
+  var receivedBytes = sumSegments(dl);
+  dl.receivedBytes = receivedBytes;
+  var elapsed = (Date.now() - dl.startedAt) / 1000;
+  var avgSpeed = elapsed > 0.5 ? (receivedBytes / elapsed) : 0;
+  var instantSpeed = 0;
+  if (dl.speedHistory && dl.speedHistory.length > 0) {
+    var spSum = 0;
+    for (var i = 0; i < dl.speedHistory.length; i++) spSum += dl.speedHistory[i].bytes;
+    var timeSpan = dl.speedHistory[dl.speedHistory.length - 1].time - dl.speedHistory[0].time;
+    instantSpeed = timeSpan > 0 ? (spSum / (timeSpan / 1000)) : 0;
+  }
+  var speed = instantSpeed > 0 ? instantSpeed : avgSpeed;
+  var segmentsDone = dl.segments ? dl.segments.filter(function(s) { return s.done; }).length : 0;
+  var activeSegments = dl.segments ? dl.segments.filter(function(s) { return !s.done && s.active; }).length : 0;
+  var eta = (speed > 0 && totalBytes > 0) ? Math.max(0, Math.round((totalBytes - receivedBytes) / speed)) : 0;
+  return {
+    id: dl.id, url: dl.url, filename: dl.filename, savePath: dl.savePath,
+    totalBytes: totalBytes, receivedBytes: receivedBytes,
+    status: dl.status, category: dl.category, error: dl.error || null,
+    speed: speed, avgSpeed: avgSpeed, instantSpeed: instantSpeed,
+    segments: dl.segmentCount || 0, segmentsDone: segmentsDone,
+    activeSegments: activeSegments, retryCount: dl.retryCount || 0,
+    totalAttempts: dl.totalAttempts || 0, segmentErrors: dl.segmentErrors || 0,
+    resumable: !!dl.resumable, streamType: dl.streamType || null,
+    eta: eta, progress: totalBytes > 0 ? (receivedBytes / totalBytes) : 0
+  };
+}
+
+function recordSpeed(dl, bytesReceived) {
+  if (!dl.speedHistory) dl.speedHistory = [];
+  var now = Date.now();
+  dl.speedHistory.push({ time: now, bytes: bytesReceived });
+  if (dl.speedHistory.length > SPEED_HISTORY_SIZE) dl.speedHistory.shift();
+  var windowStart = now - 5000;
+  dl.speedHistory = dl.speedHistory.filter(function(s) { return s.time >= windowStart; });
+}
 function filenameFromUrl(url, headers) { var cd = headers && (headers['content-disposition'] || ''); if (cd) { var m = cd.match(/filename\\*=UTF-8''(.+?)(?:;|$)/i); if (m) try { return sanitizeFilename(decodeURIComponent(m[1].trim().replace(/^\"|\"$/g, ''))); } catch (_) {} m = cd.match(/filename\\*=[^']+''(.+?)(?:;|$)/i); if (m) try { return sanitizeFilename(decodeURIComponent(m[1].trim().replace(/^\"|\"$/g, ''))); } catch (_) {} m = cd.match(/filename=\"([^\"]+)\"/i); if (m) return sanitizeFilename(m[1]); m = cd.match(/filename=([^;]+)/i); if (m) return sanitizeFilename(m[1].trim()); } try { var u = new URL(url); var p = u.pathname.split('/').filter(Boolean).pop(); if (p) { var decoded = decodeURIComponent(p); var clean = sanitizeFilename(decoded); if (clean && getExtension(clean)) return clean; if (clean) return clean; } } catch (_) {} return null; }
 function resolveUrl(base, ref) { try { return new URL(ref, base).href; } catch (_) { return ref; } }
 function computeSegmentCount(total, requested) {
@@ -244,45 +292,38 @@ function fail(dl, message) {
 function downloadSegment(dl, seg, onProgress) {
   seg.retryCount = seg.retryCount || 0;
   seg.totalAttempts = seg.totalAttempts || 0;
-  var expectedSize = seg.end - seg.start + 1;
-  var attempt = 0;
+  var fullSegmentSize = seg.end - seg.originalStart + 1;
   function tryDownload() {
     if (dl.pauseRequested || dl.status !== 'downloading') return Promise.resolve();
-    attempt++;
     seg.totalAttempts++;
     dl.totalAttempts = (dl.totalAttempts || 0) + 1;
-    if (dl.totalAttempts > MAX_TOTAL_ATTEMPTS && dl.segmentErrors > SEGMENT_ERROR_THRESHOLD) {
-      throw new Error('MAX_ATTEMPTS_EXHAUSTED');
-    }
     var existingSize = fileSize(seg.filePath);
-    if (existingSize > 0 && existingSize < expectedSize) {
-      seg.received = existingSize;
-      seg.start = seg.start + existingSize;
-    } else if (existingSize >= expectedSize) {
+    if (existingSize >= fullSegmentSize) {
       seg.done = true;
       seg.received = existingSize;
       return Promise.resolve();
     }
-    var rangeHeader = 'bytes=' + seg.start + '-' + seg.end;
-    return httpGetWithRetry(dl.url, { 'Range': rangeHeader }, { maxRetries: MAX_RETRIES, timeout: CONNECTION_TIMEOUT + seg.index * 100 }).then(function(response) {
+    seg.received = existingSize;
+    var resumeStart = seg.originalStart + existingSize;
+    var rangeHeader = 'bytes=' + resumeStart + '-' + seg.end;
+    return httpGetWithRetry(dl.url, { 'Range': rangeHeader }, { maxRetries: MAX_RETRIES, timeout: CONNECTION_TIMEOUT + (seg.retryCount * 500) }).then(function(response) {
       return new Promise(function(resolve, reject) {
         var ws = fs.createWriteStream(seg.filePath, { flags: 'a' });
         var received = 0;
-        var emitThrottle = 0;
         ws.on('error', function(err) { try { ws.destroy(); } catch (_) {} reject(err); });
         ws.on('finish', function() { resolve(); });
         response.on('data', function(chunk) {
           received += chunk.length;
-          seg.received = seg.received + chunk.length;
-          var now = Date.now();
-          if (now - emitThrottle >= 50) { emitThrottle = now; if (onProgress) onProgress(seg.received); }
+          seg.received = existingSize + received;
+          recordSpeed(dl, chunk.length);
+          if (onProgress) onProgress(seg.received);
         });
         response.on('end', function() { ws.end(); });
         response.on('error', function(err) { try { ws.destroy(); } catch (_) {} reject(err); });
       });
     }).then(function() {
       var actualSize = fileSize(seg.filePath);
-      if (actualSize >= expectedSize + (seg.start - seg.start)) {
+      if (actualSize >= fullSegmentSize) {
         seg.done = true;
         seg.received = actualSize;
         return;
@@ -290,12 +331,9 @@ function downloadSegment(dl, seg, onProgress) {
       throw new Error('INCOMPLETE_RETRY');
     }).catch(function(err) {
       if (dl.pauseRequested || dl.status !== 'downloading') return Promise.resolve();
-      seg.retryCount++;
-      dl.segmentErrors = (dl.segmentErrors || 0) + 1;
-      if (err.message && err.message.indexOf('INCOMPLETE_RETRY') >= 0 && seg.retryCount < MAX_RETRIES) {
-        return sleep(backoffDelay(seg.retryCount)).then(tryDownload);
-      }
-      if (isRetryableError(err) && seg.retryCount < MAX_RETRIES) {
+      if (err.message === 'INCOMPLETE_RETRY' || isRetryableError(err)) {
+        seg.retryCount++;
+        if (seg.retryCount >= MAX_RETRIES) throw err;
         return sleep(backoffDelay(seg.retryCount)).then(tryDownload);
       }
       throw err;
@@ -366,7 +404,7 @@ function buildSegments(dl, segCount) {
   for (var i = 0; i < segCount; i++) {
     var start = i * segSize;
     var end = (i === segCount - 1) ? dl.totalBytes - 1 : start + segSize - 1;
-    segments.push({ index: i, start: start, end: end, received: 0, filePath: segPath(dl.savePath, i), done: false, active: false, stream: null, request: null, retryCount: 0, totalAttempts: 0 });
+    segments.push({ index: i, start: start, originalStart: start, end: end, received: 0, filePath: segPath(dl.savePath, i), done: false, active: false, stream: null, request: null, retryCount: 0, totalAttempts: 0 });
   }
   dl.segments = segments;
   dl.segmentCount = segCount;

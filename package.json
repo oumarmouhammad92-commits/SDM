@@ -1,6 +1,6 @@
 {
   "name": "sdm",
-  "version": "1.2.0",
+  "version": "2.1.0",
   "description": "SDM (Sekou Download Manager) - Gestionnaire de téléchargement multi-connexions professionnel pour Windows. Compatible Chrome, Edge, Brave, Opera, Vivaldi, Arc, Chromium, Firefox.",
   "main": "main.js",
   "author": "Sekou",
