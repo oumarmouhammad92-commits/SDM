@@ -307,6 +307,16 @@ function downloadSegment(dl, seg, onProgress) {
     var resumeStart = seg.originalStart + existingSize;
     var rangeHeader = 'bytes=' + resumeStart + '-' + seg.end;
     return httpGetWithRetry(dl.url, { 'Range': rangeHeader }, { maxRetries: MAX_RETRIES, timeout: CONNECTION_TIMEOUT + (seg.retryCount * 500) }).then(function(response) {
+      // Detect range not supported (200 instead of 206)
+      if (response.statusCode === 200 && resumeStart > 0) {
+        // Server doesn't support Range - reset segment and download whole file single
+        response.destroy();
+        if (!dl.rangeUnsupported) {
+          dl.rangeUnsupported = true;
+          return switchToSingleDownload(dl, response);
+        }
+        throw new Error('Range not supported');
+      }
       return new Promise(function(resolve, reject) {
         var ws = fs.createWriteStream(seg.filePath, { flags: 'a' });
         var received = 0;
@@ -328,6 +338,8 @@ function downloadSegment(dl, seg, onProgress) {
         seg.received = actualSize;
         return;
       }
+      // Incomplete segment - retry with resume from where we are
+      seg.received = actualSize;
       throw new Error('INCOMPLETE_RETRY');
     }).catch(function(err) {
       if (dl.pauseRequested || dl.status !== 'downloading') return Promise.resolve();
@@ -340,6 +352,15 @@ function downloadSegment(dl, seg, onProgress) {
     });
   }
   return tryDownload();
+}
+
+function switchToSingleDownload(dl) {
+  // Reset segment tracking and trigger direct download
+  cleanupSegments(dl);
+  dl.segments = [];
+  dl.segmentCount = 0;
+  directDownload(dl);
+  return Promise.resolve();
 }
 function startDownload(url, options) {
   options = options || {};
@@ -425,12 +446,17 @@ function startSegmentWorkers(dl) {
           dl.receivedBytes = sumSegments(dl);
           var now = Date.now();
           if (now - dl.lastEmit >= PROGRESS_EMIT_MS) { dl.lastEmit = now; emit2('progress', snapshot(dl)); }
-        }).then(function() { seg.active = false; return next(); }).catch(function(err) {
+        }).then(function() { seg.active = false; return next();     }).catch(function(err) {
           seg.active = false;
           if (dl.pauseRequested || dl.status !== 'downloading') return;
           dl.segmentErrors = (dl.segmentErrors || 0) + 1;
           dl.rangeUnreliableCount = (dl.rangeUnreliableCount || 0) + 1;
-          if (err.message === 'MAX_ATTEMPTS_EXHAUSTED' || dl.totalAttempts > MAX_TOTAL_ATTEMPTS) {
+          if (dl.rangeUnsupported) {
+            // Range not supported - already switched to single download
+            return;
+          }
+          if (dl.totalAttempts > MAX_TOTAL_ATTEMPTS || seg.totalAttempts > MAX_RETRIES) {
+            // Reduce segment count progressively
             if (dl.currentSegCount > 1 && dl.rangeUnreliableCount >= RANGE_UNRELIABLE_THRESHOLD) {
               dl.rangeUnreliableCount = 0;
               var newCount = Math.max(1, Math.floor(dl.currentSegCount / 2));
@@ -474,16 +500,25 @@ function directDownload(dl) {
   dl.metaPath = dl.savePath + '.part.meta.json';
   saveMeta(dl);
   emit2('status', snapshot(dl));
+  // Resume from existing partial file
+  var existingBytes = fileSize(dl.savePath);
   var attempt = 0;
   function tryDirect() {
     if (dl.pauseRequested || dl.status !== 'downloading') return;
-    return httpGetWithRetry(dl.url, {}, { maxRetries: MAX_RETRIES }).then(function(response) {
+    var rangeHeader = existingBytes > 0 ? { 'Range': 'bytes=' + existingBytes + '-' } : {};
+    return httpGetWithRetry(dl.url, rangeHeader, { maxRetries: MAX_RETRIES }).then(function(response) {
+      var alreadyWritten = existingBytes;
+      if (response.statusCode === 200) {
+        // Full re-download, reset file
+        alreadyWritten = 0;
+        try { fs.unlinkSync(dl.savePath); } catch (_) {}
+      }
       return new Promise(function(resolve, reject) {
-        var ws = fs.createWriteStream(dl.savePath);
+        var ws = fs.createWriteStream(dl.savePath, { flags: existingBytes > 0 ? 'a' : 'w' });
         var received = 0;
         ws.on('error', function(err) { ws.destroy(); reject(err); });
         ws.on('finish', function() { resolve(); });
-        response.on('data', function(chunk) { received += chunk.length; dl.receivedBytes = received; dl.totalBytes = received; var now = Date.now(); if (now - dl.lastEmit >= PROGRESS_EMIT_MS) { dl.lastEmit = now; emit2('progress', snapshot(dl)); } });
+                response.on('data', function(chunk) { received += chunk.length; dl.receivedBytes = alreadyWritten + received; var now = Date.now(); if (now - dl.lastEmit >= PROGRESS_EMIT_MS) { dl.lastEmit = now; emit2('progress', snapshot(dl)); } });
         response.on('end', function() { ws.end(); });
         response.on('error', function(err) { ws.destroy(); reject(err); });
       });
@@ -542,11 +577,12 @@ function resumeDownload(id) {
           dl.receivedBytes = sumSegments(dl);
           var now = Date.now();
           if (now - dl.lastEmit >= PROGRESS_EMIT_MS) { dl.lastEmit = now; emit2('progress', snapshot(dl)); }
-        }).then(function() { seg.active = false; return next(); }).catch(function(err) {
+        }).then(function() { seg.active = false; return next();         }).catch(function(err) {
           seg.active = false;
           if (dl.pauseRequested || dl.status !== 'downloading') return;
+          if (dl.rangeUnsupported) return;
           dl.segmentErrors = (dl.segmentErrors || 0) + 1;
-          if (dl.segmentErrors > dl.segments.length) { fail(dl, 'Resume failed: ' + err.message); return; }
+          if (dl.segmentErrors > (dl.segments.length * MAX_RETRIES)) { fail(dl, 'Resume failed: ' + err.message); return; }
           return next();
         });
       }
